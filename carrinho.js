@@ -1,95 +1,109 @@
 const carrinho = document.querySelector("#carrinho");
 const lista_carrinho = JSON.parse(localStorage.getItem("lista_carrinho")) || [];
 
-if (lista_carrinho.length === 0) {
-    const mensagemVazia = document.createElement("div");
-    mensagemVazia.classList.add("mensagem-vazia");
+function criarElemento(tag, classes = [], atributos = {}, conteudo = "") {
+  const elemento = document.createElement(tag);
+  
+  if (classes.length) {
+    elemento.classList.add(...classes);
+  }
+  
+  for (const [attr, value] of Object.entries(atributos)) {
+    elemento.setAttribute(attr, value);
+  }
+  
+  if (conteudo) {
+    elemento.textContent = conteudo;
+  }
+  
+  return elemento;
+}
 
-    const gif = document.createElement("img");
-    gif.src = "carrinho-vazio.gif";
-    gif.alt = "Carrinho vazio";
-    gif.width = 125;
+function exibirCarrinhoVazio() {
+  carrinho.innerHTML = "";
+  
+  const mensagemVazia = criarElemento("div", ["mensagem-vazia"]);
+  
+  const gif = criarElemento("img", [], {
+    src: "carrinho-vazio.gif",
+    alt: "Carrinho vazio",
+    width: "125"
+  });
+  
+  const titulo = criarElemento("h2", [], {}, "Seu carrinho está vazio");
+  const descricao = criarElemento("p", [], {}, "Que tal conferir produtos incríveis e achar um especial para você?");
+  
+  const botaoNovidades = criarElemento("a", ["botao-novidades"], {
+    href: "index.html"
+  }, "Confira as Novidades");
+  
+  mensagemVazia.append(gif, titulo, descricao, botaoNovidades);
+  carrinho.append(mensagemVazia);
+}
 
-    const titulo = document.createElement("h2");
-    titulo.textContent = "Seu carrinho está vazio";
-
-    const descricao = document.createElement("p");
-    descricao.textContent = "Que tal conferir produtos incríveis e achar um especial para você?";
-
-    const botaoNovidades = document.createElement("a");
-    botaoNovidades.textContent = "Confira as Novidades";
-    botaoNovidades.href = "index.html";
-    botaoNovidades.classList.add("botao-novidades");
-
-
-    mensagemVazia.append(gif, titulo, descricao, botaoNovidades);
-    carrinho.append(mensagemVazia);
-
-} else {
-    let total = 0;
-
-    lista_carrinho.forEach((item) => {
-        const item_carrinho = document.createElement("div");
-        item_carrinho.classList.add("item");
-
-        const nome = document.createElement("h2");
-        nome.textContent = item.title;
-
-        const imagem = document.createElement("img");
-        imagem.src = item.image;
-        imagem.width = 80;
-
-        const preco = document.createElement("p");
-        preco.textContent = "R$ " + item.price;
-
-        const quantidade = document.createElement("p");
-        quantidade.textContent = "Quantidade: " + item.quantidade;
-
-        const subtotal = item.price * item.quantidade;
-        total += subtotal;
-
-        const subtotalElem = document.createElement("p");
-        subtotalElem.textContent = `Subtotal: R$ ${subtotal.toFixed(2)}`;
-
-        const botaoRemover = document.createElement("button");
-        botaoRemover.textContent = "Remover";
-        botaoRemover.addEventListener("click", (event) => {
-            event.stopPropagation();
-            removerItemDoCarrinho(item.id);
-        });
-
-        item_carrinho.append(nome, imagem, preco, quantidade, subtotalElem, botaoRemover);
-        carrinho.append(item_carrinho);
+function exibirItensCarrinho() {
+  carrinho.innerHTML = "";
+  
+  let total = 0;
+  
+  lista_carrinho.forEach((item) => {
+    const item_carrinho = criarElemento("div", ["item"]);
+    
+    const nome = criarElemento("h2", [], {}, item.title);
+    const imagem = criarElemento("img", [], {
+      src: item.image,
+      width: "80",
+      alt: item.title
     });
-
-    const totalElem = document.createElement("div");
-    totalElem.classList.add("total");
-    totalElem.innerHTML = `<h3>Total: R$ ${total.toFixed(2)}</h3>`;
-    carrinho.append(totalElem);
-
-    const finalizarCompra = document.createElement("button");
-    finalizarCompra.textContent = "Finalizar Compra";
-    finalizarCompra.classList.add("finalizar-compra");
-    finalizarCompra.addEventListener("click", () => {
-        alert("Compra finalizada! Obrigado por comprar conosco.");
-        localStorage.removeItem("lista_carrinho"); 
-        window.location.href = "index.html";
+    
+    const preco = criarElemento("p", [], {}, `R$ ${item.price.toFixed(2)}`);
+    const quantidade = criarElemento("p", [], {}, `Quantidade: ${item.quantidade}`);
+    
+    const subtotal = item.price * item.quantidade;
+    total += subtotal;
+    
+    const subtotalElem = criarElemento("p", [], {}, `Subtotal: R$ ${subtotal.toFixed(2)}`);
+    
+    const botaoRemover = criarElemento("button", [], {}, "Remover");
+    botaoRemover.addEventListener("click", (event) => {
+      event.stopPropagation();
+      removerItemDoCarrinho(item.id);
     });
+    
+    item_carrinho.append(nome, imagem, preco, quantidade, subtotalElem, botaoRemover);
+    carrinho.append(item_carrinho);
+  });
+  
+  const totalElem = criarElemento("div", ["total"]);
+  totalElem.innerHTML = `<h3>Total: R$ ${total.toFixed(2)}</h3>`;
+  carrinho.append(totalElem);
+  
+  const finalizarCompra = criarElemento("button", ["finalizar-compra"], {}, "Finalizar Compra");
+  finalizarCompra.addEventListener("click", finalizarCompraHandler);
+  
+  carrinho.append(finalizarCompra);
+}
 
-    carrinho.append(finalizarCompra);
+function finalizarCompraHandler() {
+  alert("Compra finalizada! Obrigado por comprar conosco.");
+  localStorage.removeItem("lista_carrinho"); 
+  window.location.href = "index.html";
 }
 
 function removerItemDoCarrinho(id) {
-    const lista_carrinho = JSON.parse(localStorage.getItem("lista_carrinho")) || [];
+  const listaAtualizada = lista_carrinho.filter(item => item.id !== id);
+  
+  if (listaAtualizada.length !== lista_carrinho.length) {
+    localStorage.setItem("lista_carrinho", JSON.stringify(listaAtualizada));
+    alert("Item removido do carrinho!");
+    window.location.reload();
+  } else {
+    alert("Item não encontrado no carrinho.");
+  }
+}
 
-    const index = lista_carrinho.findIndex((item) => item.id === id);
-    if (index !== -1) {
-        lista_carrinho.splice(index, 1);
-        localStorage.setItem("lista_carrinho", JSON.stringify(lista_carrinho));
-
-        alert("Item removido do carrinho!");
-        window.location.reload();
-    } else {
-        alert("Item não encontrado no carrinho.");
-    }
+if (lista_carrinho.length === 0) {
+  exibirCarrinhoVazio();
+} else {
+  exibirItensCarrinho();
 }
